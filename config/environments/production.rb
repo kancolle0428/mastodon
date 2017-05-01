@@ -104,7 +104,7 @@ Rails.application.configure do
   }
 
   config.action_mailer.default_url_options = {
-    host: ENV['SMTP_DOMAIN'] || ENV['LOCAL_DOMAIN']
+    host: ENV['LOCAL_DOMAIN']
   }
 
   config.action_mailer.delivery_method = ENV.fetch('SMTP_DELIVERY_METHOD', 'smtp').to_sym
