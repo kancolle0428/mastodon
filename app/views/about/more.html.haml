@@ -9,7 +9,14 @@
 
         - unless @instance_presenter.site_description.blank?
           %p= @instance_presenter.site_description.html_safe
-
+          
+      .panel
+        %h2= "利用規約"
+          %p= "犯罪に加担していると思える，または日本法に抵触するようなトゥートは禁止です。警察や裁判所の要請に応じてログを開示することがあります。"
+          %p= "エログロなどの理由で18歳未満閲覧禁止になりそうな文章にはContent Warningを，画像にはNSFWタグを付けてください。たとえ付けていても日本法に抵触するような画像は禁止です。"
+          %p= "連投や，フォロ爆などの過度に迷惑がかかる投稿は禁止です。スパムにしか見えないような宣伝もやめてください。"
+          %p= "艦これの話題が充実する雰囲気を目指していただけるとうれしいです。みんな提督、みんな友軍。みんなが楽しいインスタンスを目指しましょう。※ただし陸軍を除く"
+          
       .information-board
         .section
           %span= t 'about.user_count_before'
