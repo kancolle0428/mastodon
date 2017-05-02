@@ -4,13 +4,14 @@ import dotenv from 'dotenv'
 import express from 'express'
 import http from 'http'
 import redis from 'redis'
-import pg from 'pg'
+import mysql from 'mysql'
 import log from 'npmlog'
 import url from 'url'
 import WebSocket from 'ws'
 import uuid from 'uuid'
 
 const env = process.env.NODE_ENV || 'development'
+let connection;
 
 dotenv.config({
   path: env === 'production' ? '.env.production' : '.env'
@@ -33,10 +34,13 @@ if (cluster.isMaster) {
 } else {
   // cluster worker
 
-  const pgConfigs = {
+  const dbConfigs = {
     development: {
+      user: 'root',
+      password: '',
       database: 'mastodon_development',
-      host:     '/var/run/postgresql',
+      host:     'localhost',
+      port:     3306,
       max:      10
     },
 
@@ -45,13 +49,17 @@ if (cluster.isMaster) {
       password: process.env.DB_PASS || '',
       database: process.env.DB_NAME || 'mastodon_production',
       host:     process.env.DB_HOST || 'localhost',
-      port:     process.env.DB_PORT || 5432,
+      port:     process.env.DB_PORT || 3306,
       max:      10
     }
   }
 
+  // create connection to mysql
+  connection = mysql.createConnection(dbConfigs[env]);
+
+  connection.connect();
+
   const app    = express()
-  const pgPool = new pg.Pool(pgConfigs[env])
   const server = http.createServer(app)
   const wss    = new WebSocket.Server({ server })
 
@@ -104,33 +112,24 @@ if (cluster.isMaster) {
   }
 
   const accountFromToken = (token, req, next) => {
-    pgPool.connect((err, client, done) => {
+    connection.query('SELECT oauth_access_tokens.resource_owner_id, users.account_id FROM oauth_access_tokens INNER JOIN users ON oauth_access_tokens.resource_owner_id = users.id WHERE oauth_access_tokens.token = ? LIMIT 1', [token], (err, result, fields) => {
       if (err) {
         next(err)
         return
       }
 
-      client.query('SELECT oauth_access_tokens.resource_owner_id, users.account_id FROM oauth_access_tokens INNER JOIN users ON oauth_access_tokens.resource_owner_id = users.id WHERE oauth_access_tokens.token = $1 LIMIT 1', [token], (err, result) => {
-        done()
+      if (result.length === 0) {
+        err = new Error('Invalid access token')
+        err.statusCode = 401
 
-        if (err) {
-          next(err)
-          return
-        }
+        next(err)
+        return
+      }
 
-        if (result.rows.length === 0) {
-          err = new Error('Invalid access token')
-          err.statusCode = 401
+      req.accountId = result[0].account_id
 
-          next(err)
-          return
-        }
-
-        req.accountId = result.rows[0].account_id
-
-        next()
-      })
-    })
+      next()
+    });
   }
 
   const authenticationMiddleware = (req, res, next) => {
@@ -179,29 +178,20 @@ if (cluster.isMaster) {
       // Only messages that may require filtering are statuses, since notifications
       // are already personalized and deletes do not matter
       if (needsFiltering && event === 'update') {
-        pgPool.connect((err, client, done) => {
+        const unpackedPayload  = JSON.parse(payload)
+        const targetAccountIds = [unpackedPayload.account.id].concat(unpackedPayload.mentions.map(item => item.id)).concat(unpackedPayload.reblog ? [unpackedPayload.reblog.account.id] : [])
+
+        connection.query(`SELECT target_account_id FROM blocks WHERE account_id = $1 AND target_account_id IN (${placeholders(targetAccountIds, 1)}) UNION SELECT target_account_id FROM mutes WHERE account_id = ? AND target_account_id IN (${placeholders(targetAccountIds, 1)})`, [req.accountId].concat(targetAccountIds), (err, result, fields) => {
           if (err) {
             log.error(err)
             return
           }
 
-          const unpackedPayload  = JSON.parse(payload)
-          const targetAccountIds = [unpackedPayload.account.id].concat(unpackedPayload.mentions.map(item => item.id)).concat(unpackedPayload.reblog ? [unpackedPayload.reblog.account.id] : [])
+          if (result.length > 0) {
+            return
+          }
 
-          client.query(`SELECT target_account_id FROM blocks WHERE account_id = $1 AND target_account_id IN (${placeholders(targetAccountIds, 1)}) UNION SELECT target_account_id FROM mutes WHERE account_id = $1 AND target_account_id IN (${placeholders(targetAccountIds, 1)})`, [req.accountId].concat(targetAccountIds), (err, result) => {
-            done()
-
-            if (err) {
-              log.error(err)
-              return
-            }
-
-            if (result.rows.length > 0) {
-              return
-            }
-
-            transmit()
-          })
+          transmit()
         })
       } else {
         transmit()
@@ -336,6 +326,7 @@ if (cluster.isMaster) {
   process.on('exit', exit)
 
   function exit() {
+    connection.close()
     server.close()
   }
 }
