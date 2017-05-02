@@ -2,10 +2,12 @@ default: &default
   adapter: mysql2
   pool: <%= ENV["DB_POOL"] || ENV['MAX_THREADS'] || 5 %>
   timeout: 5000
-  encoding: unicode
+  encoding: utf8mb4
 
 development:
   <<: *default
+  user: root
+  password: ''
   database: mastodon_development
 
 # Warning: The database defined as "test" will be erased and
