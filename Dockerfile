@@ -14,7 +14,7 @@ COPY Gemfile Gemfile.lock package.json yarn.lock /mastodon/
 
 RUN echo "@edge https://nl.alpinelinux.org/alpine/edge/main" >> /etc/apk/repositories \
  && BUILD_DEPS=" \
-    postgresql-dev \
+    mysql-client \
     libxml2-dev \
     libxslt-dev \
     python \
