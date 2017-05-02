@@ -257,6 +257,7 @@ GEM
     mimemagic (0.3.2)
     mini_portile2 (2.1.0)
     minitest (5.10.1)
+    mysql2 (0.4.5)
     net-scp (1.2.1)
       net-ssh (>= 2.6.5)
     net-ssh (4.1.0)
@@ -529,6 +530,7 @@ DEPENDENCIES
   lograge
   mailgun_rails
   microformats2
+  mysql2
   nokogiri
   oj
   ostatus2 (~> 1.1)
