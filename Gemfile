@@ -13,6 +13,7 @@ gem 'puma'
 
 gem 'hamlit-rails'
 gem 'pg'
+gem 'mysql2'
 gem 'pghero'
 gem 'dotenv-rails'
 gem 'font-awesome-rails'

@@ -17,9 +17,11 @@ test:
 
 production:
   <<: *default
+  adapter: mysql2
+  encoding: utf8mb4
   database: <%= ENV['DB_NAME'] || 'mastodon_production' %>
-  username: <%= ENV['DB_USER'] || 'mastodon' %>
+  username: <%= ENV['DB_USER'] || 'root' %>
   password: <%= ENV['DB_PASS'] || '' %>
   host: <%= ENV['DB_HOST'] || 'localhost' %>
-  port: <%= ENV['DB_PORT'] || 5432 %>
-  prepared_statements: <%= ENV['PREPARED_STATEMENTS'] || 'true' %>
+  port: <%= ENV['DB_PORT'] || 3306 %>
+  socket: <%= ENV['DB_SOCKET'] || '/tmp/mysql.sock' %>
