@@ -91,7 +91,7 @@ class Status < ApplicationRecord
   end
 
   def ancestors(account = nil)
-    ids = [id]
+    ids = []
     parent_id = in_reply_to_id
     while parent_id
       # avoid infinite loop
@@ -116,7 +116,7 @@ class Status < ApplicationRecord
       # avoid infinite loop
       break if ids.include?(parent_id)
 
-      ids << parent_id
+      ids << parent_id unless parent_id == id
       status = Status.find_by(in_reply_to_id: parent_id)
       parent_id = status.try(:id)
     end
