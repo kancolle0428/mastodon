@@ -12,7 +12,6 @@ gem 'jquery-rails'
 gem 'puma'
 
 gem 'hamlit-rails'
-gem 'pg'
 gem 'mysql2'
 gem 'pghero'
 gem 'dotenv-rails'
