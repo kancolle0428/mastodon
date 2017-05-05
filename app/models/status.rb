@@ -102,6 +102,8 @@ class Status < ApplicationRecord
       parent_id = status.try(:in_reply_to_id)
     end
 
+    ids.reverse!
+
     statuses = Status.where(id: ids).group_by(&:id)
     results  = ids.map { |id| statuses[id].first }
     results  = results.reject { |status| filter_from_context?(status, account) }
