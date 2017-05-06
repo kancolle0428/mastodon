@@ -49,6 +49,11 @@ ADD package.json /mastodon/package.json
 ADD yarn.lock /mastodon/yarn.lock
 RUN yarn --ignore-optional
 
+COPY Gemfile Gemfile.lock package.json yarn.lock /mastodon/
+
+RUN bundle install --deployment --without test development \
+ && yarn --ignore-optional --pure-lockfile
+
 COPY . /mastodon
 
-VOLUME /mastodon/public/system /mastodon/public/assets
+VOLUME /mastodon/public/system /mastodon/public/assets /mastodon/public/packs

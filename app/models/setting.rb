@@ -1,4 +1,16 @@
 # frozen_string_literal: true
+# == Schema Information
+#
+# Table name: settings
+#
+#  id         :integer          not null, primary key
+#  var        :string(255)      not null
+#  value      :text(65535)
+#  thing_type :string(255)
+#  thing_id   :integer
+#  created_at :datetime
+#  updated_at :datetime
+#
 
 class Setting < RailsSettings::Base
   source Rails.root.join('config/settings.yml')

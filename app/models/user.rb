@@ -1,4 +1,37 @@
 # frozen_string_literal: true
+# == Schema Information
+#
+# Table name: users
+#
+#  id                        :integer          not null, primary key
+#  email                     :string(255)      default(""), not null
+#  account_id                :integer          not null
+#  created_at                :datetime         not null
+#  updated_at                :datetime         not null
+#  encrypted_password        :string(255)      default(""), not null
+#  reset_password_token      :string(255)
+#  reset_password_sent_at    :datetime
+#  remember_created_at       :datetime
+#  sign_in_count             :integer          default(0), not null
+#  current_sign_in_at        :datetime
+#  last_sign_in_at           :datetime
+#  current_sign_in_ip        :string(255)
+#  last_sign_in_ip           :string(255)
+#  admin                     :boolean          default(FALSE)
+#  confirmation_token        :string(255)
+#  confirmed_at              :datetime
+#  confirmation_sent_at      :datetime
+#  unconfirmed_email         :string(255)
+#  locale                    :string(255)
+#  encrypted_otp_secret      :string(255)
+#  encrypted_otp_secret_iv   :string(255)
+#  encrypted_otp_secret_salt :string(255)
+#  consumed_timestep         :integer
+#  otp_required_for_login    :boolean
+#  last_emailed_at           :datetime
+#  otp_backup_codes          :string(255)
+#  allowed_languages         :string(255)
+#
 
 class User < ApplicationRecord
   include Settings::Extend
@@ -21,6 +54,12 @@ class User < ApplicationRecord
 
   def confirmed?
     confirmed_at.present?
+  end
+
+  def disable_two_factor!
+    self.otp_required_for_login = false
+    otp_backup_codes&.clear
+    save!
   end
 
   def send_devise_notification(notification, *args)

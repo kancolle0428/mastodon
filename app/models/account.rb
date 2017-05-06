@@ -1,27 +1,55 @@
 # frozen_string_literal: true
+# == Schema Information
+#
+# Table name: accounts
+#
+#  id                      :integer          not null, primary key
+#  username                :string(255)      default(""), not null
+#  domain                  :string(255)
+#  secret                  :string(255)      default(""), not null
+#  private_key             :text(65535)
+#  public_key              :text(65535)
+#  remote_url              :string(255)      default(""), not null
+#  salmon_url              :string(255)      default(""), not null
+#  hub_url                 :string(255)      default(""), not null
+#  created_at              :datetime         not null
+#  updated_at              :datetime         not null
+#  note                    :text(65535)
+#  display_name            :string(255)      default(""), not null
+#  uri                     :string(255)      default(""), not null
+#  url                     :string(255)
+#  avatar_file_name        :string(255)
+#  avatar_content_type     :string(255)
+#  avatar_file_size        :integer
+#  avatar_updated_at       :datetime
+#  header_file_name        :string(255)
+#  header_content_type     :string(255)
+#  header_file_size        :integer
+#  header_updated_at       :datetime
+#  avatar_remote_url       :string(255)
+#  subscription_expires_at :datetime
+#  silenced                :boolean          default(FALSE), not null
+#  suspended               :boolean          default(FALSE), not null
+#  locked                  :boolean          default(FALSE), not null
+#  header_remote_url       :string(255)      default(""), not null
+#  statuses_count          :integer          default(0), not null
+#  followers_count         :integer          default(0), not null
+#  following_count         :integer          default(0), not null
+#  last_webfingered_at     :datetime
+#
 
 class Account < ApplicationRecord
-  include Targetable
-
   MENTION_RE = /(?:^|[^\/\w])@([a-z0-9_]+(?:@[a-z0-9\.\-]+[a-z0-9]+)?)/i
-  IMAGE_MIME_TYPES = ['image/jpeg', 'image/png', 'image/gif'].freeze
+
+  include AccountAvatar
+  include AccountHeader
+  include Attachmentable
+  include Targetable
 
   # Local users
   has_one :user, inverse_of: :account
   validates :username, presence: true, format: { with: /\A[a-z0-9_]+\z/i }, uniqueness: { scope: :domain, case_sensitive: false }, length: { maximum: 30 }, if: 'local?'
   validates :username, presence: true, uniqueness: { scope: :domain, case_sensitive: true }, unless: 'local?'
-
-  # Avatar upload
-  has_attached_file :avatar, styles: ->(f) { avatar_styles(f) }, convert_options: { all: '-quality 80 -strip' }
-  validates_attachment_content_type :avatar, content_type: IMAGE_MIME_TYPES
-  validates_attachment_size :avatar, less_than: 2.megabytes
-
-  # Header upload
-  has_attached_file :header, styles: ->(f) { header_styles(f) }, convert_options: { all: '-quality 80 -strip' }
-  validates_attachment_content_type :header, content_type: IMAGE_MIME_TYPES
-  validates_attachment_size :header, less_than: 2.megabytes
-
-  before_post_process :set_file_extensions
 
   # Local user profile validations
   validates :display_name, length: { maximum: 30 }, if: 'local?'
@@ -46,6 +74,8 @@ class Account < ApplicationRecord
   # Block relationships
   has_many :block_relationships, class_name: 'Block', foreign_key: 'account_id', dependent: :destroy
   has_many :blocking, -> { order('blocks.id desc') }, through: :block_relationships, source: :target_account
+  has_many :blocked_by_relationships, class_name: 'Block', foreign_key: :target_account_id, dependent: :destroy
+  has_many :blocked_by, -> { order('blocks.id desc') }, through: :blocked_by_relationships, source: :account
 
   # Mute relationships
   has_many :mute_relationships, class_name: 'Mute', foreign_key: 'account_id', dependent: :destroy
@@ -63,14 +93,25 @@ class Account < ApplicationRecord
 
   scope :remote, -> { where.not(domain: nil) }
   scope :local, -> { where(domain: nil) }
-  scope :without_followers, -> { where('(select count(f.id) from follows as f where f.target_account_id = accounts.id) = 0') }
-  scope :with_followers, -> { where('(select count(f.id) from follows as f where f.target_account_id = accounts.id) > 0') }
+  scope :without_followers, -> { where(followers_count: 0) }
+  scope :with_followers, -> { where('followers_count > 0') }
   scope :expiring, ->(time) { where(subscription_expires_at: nil).or(where('subscription_expires_at < ?', time)).remote.with_followers }
+  scope :partitioned, -> { order('row_number() over (partition by domain)') }
   scope :silenced, -> { where(silenced: true) }
   scope :suspended, -> { where(suspended: true) }
   scope :recent, -> { reorder(id: :desc) }
   scope :alphabetic, -> { order(domain: :asc, username: :asc) }
   scope :by_domain_accounts, -> { group(:domain).select(:domain, 'COUNT(*) AS accounts_count').order('accounts_count desc') }
+
+  delegate :email,
+           :current_sign_in_ip,
+           :current_sign_in_at,
+           :confirmed?,
+           to: :user,
+           prefix: true,
+           allow_nil: true
+
+  delegate :allowed_languages, to: :user, prefix: false, allow_nil: true
 
   def follow!(other_account)
     active_relationships.where(target_account: other_account).first_or_create!(target_account: other_account)
@@ -132,7 +173,7 @@ class Account < ApplicationRecord
   end
 
   def subscribed?
-    !subscription_expires_at.blank?
+    subscription_expires_at.present?
   end
 
   def followers_domains
@@ -155,7 +196,7 @@ class Account < ApplicationRecord
     OStatus2::Subscription.new(remote_url, secret: secret, lease_seconds: 86_400 * 30, webhook: webhook_url, hub: hub_url)
   end
 
-  def save_with_optional_avatar!
+  def save_with_optional_media!
     save!
   rescue ActiveRecord::RecordInvalid
     self.avatar              = nil
@@ -165,50 +206,16 @@ class Account < ApplicationRecord
     save!
   end
 
-  def avatar_original_url
-    avatar.url(:original)
-  end
-
-  def avatar_static_url
-    avatar_content_type == 'image/gif' ? avatar.url(:static) : avatar_original_url
-  end
-
-  def header_original_url
-    header.url(:original)
-  end
-
-  def header_static_url
-    header_content_type == 'image/gif' ? header.url(:static) : header_original_url
-  end
-
-  def avatar_remote_url=(url)
-    parsed_url = Addressable::URI.parse(url).normalize
-
-    return if !%w(http https).include?(parsed_url.scheme) || parsed_url.host.empty? || self[:avatar_remote_url] == url
-
-    self.avatar              = URI.parse(parsed_url.to_s)
-    self[:avatar_remote_url] = url
-  rescue OpenURI::HTTPError => e
-    Rails.logger.debug "Error fetching remote avatar: #{e}"
-  end
-
-  def header_remote_url=(url)
-    parsed_url = Addressable::URI.parse(url).normalize
-
-    return if !%w(http https).include?(parsed_url.scheme) || parsed_url.host.empty? || self[:header_remote_url] == url
-
-    self.header              = URI.parse(parsed_url.to_s)
-    self[:header_remote_url] = url
-  rescue OpenURI::HTTPError => e
-    Rails.logger.debug "Error fetching remote header: #{e}"
-  end
-
   def object_type
     :person
   end
 
   def to_param
     username
+  end
+
+  def excluded_from_timeline_account_ids
+    Rails.cache.fetch("exclude_account_ids_for:#{id}") { blocking.pluck(:target_account_id) + blocked_by.pluck(:account_id) + muting.pluck(:target_account_id) }
   end
 
   class << self
@@ -289,19 +296,7 @@ class Account < ApplicationRecord
     private
 
     def follow_mapping(query, field)
-      query.pluck(field).inject({}) { |mapping, id| mapping[id] = true; mapping }
-    end
-
-    def avatar_styles(file)
-      styles = { original: '120x120#' }
-      styles[:static] = { format: 'png' } if file.content_type == 'image/gif'
-      styles
-    end
-
-    def header_styles(file)
-      styles = { original: '700x335#' }
-      styles[:static] = { format: 'png' } if file.content_type == 'image/gif'
-      styles
+      query.pluck(field).each_with_object({}) { |id, mapping| mapping[id] = true }
     end
   end
 
@@ -322,19 +317,5 @@ class Account < ApplicationRecord
     return if local?
 
     self.domain = TagManager.instance.normalize_domain(domain)
-  end
-
-  def set_file_extensions
-    unless avatar.blank?
-      extension = Paperclip::Interpolations.content_type_extension(avatar, :original)
-      basename  = Paperclip::Interpolations.basename(avatar, :original)
-      avatar.instance_write :file_name, [basename, extension].delete_if(&:empty?).join('.')
-    end
-
-    unless header.blank?
-      extension = Paperclip::Interpolations.content_type_extension(header, :original)
-      basename  = Paperclip::Interpolations.basename(header, :original)
-      header.instance_write :file_name, [basename, extension].delete_if(&:empty?).join('.')
-    end
   end
 end
