@@ -13,7 +13,7 @@ WORKDIR /mastodon
 COPY Gemfile Gemfile.lock package.json yarn.lock /mastodon/
 
 RUN echo 'deb http://httpredir.debian.org/debian jessie-backports main contrib non-free' >> /etc/apt/sources.list
-RUN curl -sL https://deb.nodesource.com/setup_4.x | bash -
+RUN curl -sL https://deb.nodesource.com/setup_7.x | bash -
 RUN apt-get update -qq && \
     apt-get install -y build-essential libpq-dev libxml2-dev libxslt1-dev nodejs ffmpeg && \
     rm -rf /var/lib/apt/lists/*
