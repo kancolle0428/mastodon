@@ -39,7 +39,7 @@ RUN echo "deb http://repo.mysql.com/apt/debian/ jessie mysql-${MYSQL_MAJOR}" > /
     mkdir -p /var/lib/mysql
 
 
-RUN npm install -g npm@3 && npm install -g yarn
+RUN npm install -g yarn
 
 ADD Gemfile /mastodon/Gemfile
 ADD Gemfile.lock /mastodon/Gemfile.lock
@@ -48,11 +48,6 @@ RUN bundle install --deployment --without test development
 ADD package.json /mastodon/package.json
 ADD yarn.lock /mastodon/yarn.lock
 RUN yarn --ignore-optional
-
-COPY Gemfile Gemfile.lock package.json yarn.lock /mastodon/
-
-RUN bundle install --deployment --without test development \
- && yarn --ignore-optional --pure-lockfile
 
 COPY . /mastodon
 
