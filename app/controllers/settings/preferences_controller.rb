@@ -5,7 +5,13 @@ class Settings::PreferencesController < ApplicationController
 
   before_action :authenticate_user!
 
-  def show; end
+  def show
+    begin
+      @allowed_languages = JSON.parse(current_user.allowed_languages)
+    rescue => exception
+      @allowed_languages = I18n.available_locales
+    end
+  end
 
   def update
     user_settings.update(user_settings_params.to_h)

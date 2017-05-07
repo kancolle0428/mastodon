@@ -17,10 +17,12 @@
       wrapper: :with_label,
       include_blank: false,
       label_method: lambda { |locale| human_locale(locale) },
+      value_method: lambda { |locale| locale },
       required: false,
       as: :check_boxes,
       collection_wrapper_tag: 'ul',
-      item_wrapper_tag: 'li'
+      item_wrapper_tag: 'li',
+      checked: @allowed_languages
 
     = f.input :setting_default_privacy, collection: Status.visibilities.keys - ['direct'], wrapper: :with_label, include_blank: false, label_method: lambda { |visibility| safe_join([I18n.t("statuses.visibilities.#{visibility}"), content_tag(:span, I18n.t("statuses.visibilities.#{visibility}_long"), class: 'hint')]) }, required: false, as: :radio_buttons, collection_wrapper_tag: 'ul', item_wrapper_tag: 'li'
 

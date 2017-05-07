@@ -165,7 +165,12 @@ class Status < ApplicationRecord
 
   class << self
     def in_allowed_languages(account)
-      where(language: account.allowed_languages)
+      begin
+        allowed_languages = JSON.parse(account.allowed_languages)
+      rescue => exception
+        allowed_languages = []
+      end
+      where(language: allowed_languages)
     end
 
     def as_home_timeline(account)
