@@ -8,7 +8,7 @@
 #
 defaults: &defaults
   site_title: '艦ます - 艦これ用マストドン'
-  site_description: '「艦ます」は提督のためのSNSです。プレイ実況や攻略情報の共有、ほか艦これの雑談にご利用ください。'
+  site_description: '「艦ます」は艦これを愛する提督のためのSNSです。プレイ実況や攻略情報の共有、ほか艦これの雑談にご利用ください。'
   site_extended_description: ''
   site_contact_username: 'admin'
   site_contact_email: 'kancolle.mastodon@gmail.com'
