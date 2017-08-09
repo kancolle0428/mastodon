@@ -1,3 +1,14 @@
+const createAudio = sources => {
+  const audio = new Audio();
+  sources.forEach(({ type, src }) => {
+    const source = document.createElement('source');
+    source.type = type;
+    source.src = src;
+    audio.appendChild(source);
+  });
+  return audio;
+};
+
 const play = audio => {
   if (!audio.paused) {
     audio.pause();
@@ -9,10 +20,19 @@ const play = audio => {
 
 export default function soundsMiddleware() {
   const soundCache = {
-    boop: new Audio(['/sounds/boop.mp3'])
+    boop: createAudio([
+      {
+        src: '/sounds/boop.ogg',
+        type: 'audio/ogg',
+      },
+      {
+        src: '/sounds/boop.mp3',
+        type: 'audio/mpeg',
+      },
+    ]),
   };
 
-  return ({ dispatch }) => next => (action) => {
+  return () => next => action => {
     if (action.meta && action.meta.sound && soundCache[action.meta.sound]) {
       play(soundCache[action.meta.sound]);
     }

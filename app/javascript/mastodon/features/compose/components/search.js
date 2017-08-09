@@ -1,26 +1,29 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { defineMessages, injectIntl, FormattedMessage } from 'react-intl';
+import { defineMessages, injectIntl } from 'react-intl';
 
 const messages = defineMessages({
-  placeholder: { id: 'search.placeholder', defaultMessage: 'Search' }
+  placeholder: { id: 'search.placeholder', defaultMessage: 'Search' },
 });
 
-class Search extends React.PureComponent {
+@injectIntl
+export default class Search extends React.PureComponent {
 
-  constructor (props, context) {
-    super(props, context);
-    this.handleChange = this.handleChange.bind(this);
-    this.handleKeyDown = this.handleKeyDown.bind(this);
-    this.handleFocus = this.handleFocus.bind(this);
-    this.handleClear = this.handleClear.bind(this);
-  }
+  static propTypes = {
+    value: PropTypes.string.isRequired,
+    submitted: PropTypes.bool,
+    onChange: PropTypes.func.isRequired,
+    onSubmit: PropTypes.func.isRequired,
+    onClear: PropTypes.func.isRequired,
+    onShow: PropTypes.func.isRequired,
+    intl: PropTypes.object.isRequired,
+  };
 
-  handleChange (e) {
+  handleChange = (e) => {
     this.props.onChange(e.target.value);
   }
 
-  handleClear (e) {
+  handleClear = (e) => {
     e.preventDefault();
 
     if (this.props.value.length > 0 || this.props.submitted) {
@@ -28,7 +31,7 @@ class Search extends React.PureComponent {
     }
   }
 
-  handleKeyDown (e) {
+  handleKeyDown = (e) => {
     if (e.key === 'Enter') {
       e.preventDefault();
       this.props.onSubmit();
@@ -39,7 +42,7 @@ class Search extends React.PureComponent {
 
   }
 
-  handleFocus () {
+  handleFocus = () => {
     this.props.onShow();
   }
 
@@ -49,15 +52,18 @@ class Search extends React.PureComponent {
 
     return (
       <div className='search'>
-        <input
-          className='search__input'
-          type='text'
-          placeholder={intl.formatMessage(messages.placeholder)}
-          value={value}
-          onChange={this.handleChange}
-          onKeyUp={this.handleKeyDown}
-          onFocus={this.handleFocus}
-        />
+        <label>
+          <span style={{ display: 'none' }}>{intl.formatMessage(messages.placeholder)}</span>
+          <input
+            className='search__input'
+            type='text'
+            placeholder={intl.formatMessage(messages.placeholder)}
+            value={value}
+            onChange={this.handleChange}
+            onKeyUp={this.handleKeyDown}
+            onFocus={this.handleFocus}
+          />
+        </label>
 
         <div role='button' tabIndex='0' className='search__icon' onClick={this.handleClear}>
           <i className={`fa fa-search ${hasValue ? '' : 'active'}`} />
@@ -68,15 +74,3 @@ class Search extends React.PureComponent {
   }
 
 }
-
-Search.propTypes = {
-  value: PropTypes.string.isRequired,
-  submitted: PropTypes.bool,
-  onChange: PropTypes.func.isRequired,
-  onSubmit: PropTypes.func.isRequired,
-  onClear: PropTypes.func.isRequired,
-  onShow: PropTypes.func.isRequired,
-  intl: PropTypes.object.isRequired
-};
-
-export default injectIntl(Search);

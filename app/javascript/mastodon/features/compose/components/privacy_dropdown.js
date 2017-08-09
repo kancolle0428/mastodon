@@ -12,41 +12,79 @@ const messages = defineMessages({
   private_long: { id: 'privacy.private.long', defaultMessage: 'Post to followers only' },
   direct_short: { id: 'privacy.direct.short', defaultMessage: 'Direct' },
   direct_long: { id: 'privacy.direct.long', defaultMessage: 'Post to mentioned users only' },
-  change_privacy: { id: 'privacy.change', defaultMessage: 'Adjust status privacy' }
+  change_privacy: { id: 'privacy.change', defaultMessage: 'Adjust status privacy' },
 });
 
 const iconStyle = {
   height: null,
-  lineHeight: '27px'
-}
+  lineHeight: '27px',
+};
 
-class PrivacyDropdown extends React.PureComponent {
+@injectIntl
+export default class PrivacyDropdown extends React.PureComponent {
 
-  constructor (props, context) {
-    super(props, context);
-    this.state = {
-      open: false
-    };
-    this.handleToggle = this.handleToggle.bind(this);
-    this.handleClick = this.handleClick.bind(this);
-    this.onGlobalClick = this.onGlobalClick.bind(this);
-    this.setRef = this.setRef.bind(this);
+  static propTypes = {
+    isUserTouching: PropTypes.func,
+    isModalOpen: PropTypes.bool.isRequired,
+    onModalOpen: PropTypes.func,
+    onModalClose: PropTypes.func,
+    value: PropTypes.string.isRequired,
+    onChange: PropTypes.func.isRequired,
+    intl: PropTypes.object.isRequired,
+  };
+
+  state = {
+    open: false,
+  };
+
+  handleToggle = () => {
+    if (this.props.isUserTouching()) {
+      if (this.state.open) {
+        this.props.onModalClose();
+      } else {
+        this.props.onModalOpen({
+          actions: this.options.map(option => ({ ...option, active: option.value === this.props.value })),
+          onClick: this.handleModalActionClick,
+        });
+      }
+    } else {
+      this.setState({ open: !this.state.open });
+    }
   }
 
-  handleToggle () {
-    this.setState({ open: !this.state.open });
-  }
-
-  handleClick (value, e) {
+  handleModalActionClick = (e) => {
     e.preventDefault();
-    this.setState({ open: false });
+    const { value } = this.options[e.currentTarget.getAttribute('data-index')];
+    this.props.onModalClose();
     this.props.onChange(value);
   }
 
-  onGlobalClick (e) {
+  handleClick = (e) => {
+    if (e.key === 'Escape') {
+      this.setState({ open: false });
+    } else if (!e.key || e.key === 'Enter') {
+      const value = e.currentTarget.getAttribute('data-index');
+      e.preventDefault();
+      this.setState({ open: false });
+      this.props.onChange(value);
+    }
+  }
+
+  onGlobalClick = (e) => {
     if (e.target !== this.node && !this.node.contains(e.target) && this.state.open) {
       this.setState({ open: false });
     }
+  }
+
+  componentWillMount () {
+    const { intl: { formatMessage } } = this.props;
+
+    this.options = [
+      { icon: 'globe', value: 'public', text: formatMessage(messages.public_short), meta: formatMessage(messages.public_long) },
+      { icon: 'unlock-alt', value: 'unlisted', text: formatMessage(messages.unlisted_short), meta: formatMessage(messages.unlisted_long) },
+      { icon: 'lock', value: 'private', text: formatMessage(messages.private_short), meta: formatMessage(messages.private_long) },
+      { icon: 'envelope', value: 'direct', text: formatMessage(messages.direct_short), meta: formatMessage(messages.direct_long) },
+    ];
   }
 
   componentDidMount () {
@@ -59,33 +97,26 @@ class PrivacyDropdown extends React.PureComponent {
     window.removeEventListener('touchstart', this.onGlobalClick);
   }
 
-  setRef (c) {
+  setRef = (c) => {
     this.node = c;
   }
 
   render () {
-    const { value, onChange, intl } = this.props;
+    const { value, intl } = this.props;
     const { open } = this.state;
 
-    const options = [
-      { icon: 'globe', value: 'public', shortText: intl.formatMessage(messages.public_short), longText: intl.formatMessage(messages.public_long) },
-      { icon: 'unlock-alt', value: 'unlisted', shortText: intl.formatMessage(messages.unlisted_short), longText: intl.formatMessage(messages.unlisted_long) },
-      { icon: 'lock', value: 'private', shortText: intl.formatMessage(messages.private_short), longText: intl.formatMessage(messages.private_long) },
-      { icon: 'envelope', value: 'direct', shortText: intl.formatMessage(messages.direct_short), longText: intl.formatMessage(messages.direct_long) }
-    ];
-
-    const valueOption = options.find(item => item.value === value);
+    const valueOption = this.options.find(item => item.value === value);
 
     return (
       <div ref={this.setRef} className={`privacy-dropdown ${open ? 'active' : ''}`}>
-        <div className='privacy-dropdown__value'><IconButton className='privacy-dropdown__value-icon' icon={valueOption.icon} title={intl.formatMessage(messages.change_privacy)} size={18} active={open} inverted onClick={this.handleToggle} style={iconStyle}/></div>
+        <div className='privacy-dropdown__value'><IconButton className='privacy-dropdown__value-icon' icon={valueOption.icon} title={intl.formatMessage(messages.change_privacy)} size={18} expanded={open} active={open} inverted onClick={this.handleToggle} style={iconStyle} /></div>
         <div className='privacy-dropdown__dropdown'>
-          {options.map(item =>
-            <div role='button' tabIndex='0' key={item.value} onClick={this.handleClick.bind(this, item.value)} className={`privacy-dropdown__option ${item.value === value ? 'active' : ''}`}>
+          {open && this.options.map(item =>
+            <div role='button' tabIndex='0' key={item.value} data-index={item.value} onKeyDown={this.handleClick} onClick={this.handleClick} className={`privacy-dropdown__option ${item.value === value ? 'active' : ''}`}>
               <div className='privacy-dropdown__option__icon'><i className={`fa fa-fw fa-${item.icon}`} /></div>
               <div className='privacy-dropdown__option__content'>
-                <strong>{item.shortText}</strong>
-                {item.longText}
+                <strong>{item.text}</strong>
+                {item.meta}
               </div>
             </div>
           )}
@@ -95,11 +126,3 @@ class PrivacyDropdown extends React.PureComponent {
   }
 
 }
-
-PrivacyDropdown.propTypes = {
-  value: PropTypes.string.isRequired,
-  onChange: PropTypes.func.isRequired,
-  intl: PropTypes.object.isRequired
-};
-
-export default injectIntl(PrivacyDropdown);

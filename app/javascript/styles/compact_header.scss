@@ -2,10 +2,16 @@
   h1 {
     font-size: 24px;
     line-height: 28px;
-    color: $color3;
-    overflow: hidden;
+    color: $ui-primary-color;
     font-weight: 500;
     margin-bottom: 20px;
+    padding: 0 10px;
+    overflow-wrap: break-word;
+
+    @media screen and (max-width: 740px) {
+      text-align: center;
+      padding: 20px 10px 0;
+    }
 
     a {
       color: inherit;
@@ -14,7 +20,7 @@
 
     small {
       font-weight: 400;
-      color: $color2;
+      color: $ui-secondary-color;
     }
 
     img {

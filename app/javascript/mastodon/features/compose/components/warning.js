@@ -1,11 +1,11 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-class Warning extends React.PureComponent {
+export default class Warning extends React.PureComponent {
 
-  constructor (props) {
-    super(props);
-  }
+  static propTypes = {
+    message: PropTypes.node.isRequired,
+  };
 
   render () {
     const { message } = this.props;
@@ -18,9 +18,3 @@ class Warning extends React.PureComponent {
   }
 
 }
-
-Warning.propTypes = {
-  message: PropTypes.node.isRequired
-};
-
-export default Warning;

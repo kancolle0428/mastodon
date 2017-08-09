@@ -12,25 +12,29 @@ import { defineMessages, injectIntl } from 'react-intl';
 import ImmutablePureComponent from 'react-immutable-pure-component';
 
 const messages = defineMessages({
-  heading: { id: 'column.follow_requests', defaultMessage: 'Follow requests' }
+  heading: { id: 'column.follow_requests', defaultMessage: 'Follow requests' },
 });
 
 const mapStateToProps = state => ({
-  accountIds: state.getIn(['user_lists', 'follow_requests', 'items'])
+  accountIds: state.getIn(['user_lists', 'follow_requests', 'items']),
 });
 
-class FollowRequests extends ImmutablePureComponent {
+@connect(mapStateToProps)
+@injectIntl
+export default class FollowRequests extends ImmutablePureComponent {
 
-  constructor (props, context) {
-    super(props, context);
-    this.handleScroll = this.handleScroll.bind(this);
-  }
+  static propTypes = {
+    params: PropTypes.object.isRequired,
+    dispatch: PropTypes.func.isRequired,
+    accountIds: ImmutablePropTypes.list,
+    intl: PropTypes.object.isRequired,
+  };
 
   componentWillMount () {
     this.props.dispatch(fetchFollowRequests());
   }
 
-  handleScroll (e) {
+  handleScroll = (e) => {
     const { scrollTop, scrollHeight, clientHeight } = e.target;
 
     if (scrollTop === scrollHeight - clientHeight) {
@@ -52,6 +56,7 @@ class FollowRequests extends ImmutablePureComponent {
     return (
       <Column icon='users' heading={intl.formatMessage(messages.heading)}>
         <ColumnBackButtonSlim />
+
         <ScrollContainer scrollKey='follow_requests'>
           <div className='scrollable' onScroll={this.handleScroll}>
             {accountIds.map(id =>
@@ -62,13 +67,5 @@ class FollowRequests extends ImmutablePureComponent {
       </Column>
     );
   }
+
 }
-
-FollowRequests.propTypes = {
-  params: PropTypes.object.isRequired,
-  dispatch: PropTypes.func.isRequired,
-  accountIds: ImmutablePropTypes.list,
-  intl: PropTypes.object.isRequired
-};
-
-export default connect(mapStateToProps)(injectIntl(FollowRequests));

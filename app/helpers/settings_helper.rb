@@ -5,6 +5,7 @@ module SettingsHelper
     en: 'English',
     ar: 'العربية',
     bg: 'Български',
+    ca: 'Català',
     de: 'Deutsch',
     eo: 'Esperanto',
     es: 'Español',
@@ -18,6 +19,7 @@ module SettingsHelper
     io: 'Ido',
     it: 'Italiano',
     ja: '日本語',
+    ko: '한국어',
     nl: 'Nederlands',
     no: 'Norsk',
     oc: 'Occitan',
@@ -25,6 +27,8 @@ module SettingsHelper
     pt: 'Português',
     'pt-BR': 'Português do Brasil',
     ru: 'Русский',
+    th: 'ภาษาไทย',
+    tr: 'Türkçe',
     uk: 'Українська',
     'zh-CN': '简体中文',
     'zh-HK': '繁體中文（香港）',
@@ -37,5 +41,17 @@ module SettingsHelper
 
   def hash_to_object(hash)
     HashObject.new(hash)
+  end
+
+  def session_device_icon(session)
+    device = session.detection.device
+
+    if device.mobile?
+      'mobile'
+    elsif device.tablet?
+      'tablet'
+    else
+      'desktop'
+    end
   end
 end

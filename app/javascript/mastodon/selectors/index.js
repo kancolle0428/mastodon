@@ -1,8 +1,5 @@
 import { createSelector } from 'reselect';
-import Immutable from 'immutable';
-
-const getStatuses = state => state.get('statuses');
-const getAccounts = state => state.get('accounts');
+import { List as ImmutableList } from 'immutable';
 
 const getAccountBase         = (state, id) => state.getIn(['accounts', id], null);
 const getAccountCounters     = (state, id) => state.getIn(['accounts_counters', id], null);
@@ -56,7 +53,10 @@ export const getAlerts = createSelector([getAlertsBase], (base) => {
       message: item.get('message'),
       title: item.get('title'),
       key: item.get('key'),
-      dismissAfter: 5000
+      dismissAfter: 5000,
+      barStyle: {
+        zIndex: 200,
+      },
     });
   });
 
@@ -66,8 +66,22 @@ export const getAlerts = createSelector([getAlertsBase], (base) => {
 export const makeGetNotification = () => {
   return createSelector([
     (_, base)             => base,
-    (state, _, accountId) => state.getIn(['accounts', accountId])
+    (state, _, accountId) => state.getIn(['accounts', accountId]),
   ], (base, account) => {
     return base.set('account', account);
   });
 };
+
+export const getAccountGallery = createSelector([
+  (state, id) => state.getIn(['timelines', `account:${id}:media`, 'items'], ImmutableList()),
+  state       => state.get('statuses'),
+], (statusIds, statuses) => {
+  let medias = ImmutableList();
+
+  statusIds.forEach(statusId => {
+    const status = statuses.get(statusId);
+    medias = medias.concat(status.get('media_attachments').map(media => media.set('status', status)));
+  });
+
+  return medias;
+});

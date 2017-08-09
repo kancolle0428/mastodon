@@ -2,8 +2,6 @@ import api from '../api';
 
 import { updateTimeline } from './timelines';
 
-import * as emojione from 'emojione';
-
 export const COMPOSE_CHANGE          = 'COMPOSE_CHANGE';
 export const COMPOSE_SUBMIT_REQUEST  = 'COMPOSE_SUBMIT_REQUEST';
 export const COMPOSE_SUBMIT_SUCCESS  = 'COMPOSE_SUBMIT_SUCCESS';
@@ -29,13 +27,14 @@ export const COMPOSE_SPOILERNESS_CHANGE = 'COMPOSE_SPOILERNESS_CHANGE';
 export const COMPOSE_SPOILER_TEXT_CHANGE = 'COMPOSE_SPOILER_TEXT_CHANGE';
 export const COMPOSE_VISIBILITY_CHANGE  = 'COMPOSE_VISIBILITY_CHANGE';
 export const COMPOSE_LISTABILITY_CHANGE = 'COMPOSE_LISTABILITY_CHANGE';
+export const COMPOSE_COMPOSING_CHANGE = 'COMPOSE_COMPOSING_CHANGE';
 
 export const COMPOSE_EMOJI_INSERT = 'COMPOSE_EMOJI_INSERT';
 
 export function changeCompose(text) {
   return {
     type: COMPOSE_CHANGE,
-    text: text
+    text: text,
   };
 };
 
@@ -43,7 +42,7 @@ export function replyCompose(status, router) {
   return (dispatch, getState) => {
     dispatch({
       type: COMPOSE_REPLY,
-      status: status
+      status: status,
     });
 
     if (!getState().getIn(['compose', 'mounted'])) {
@@ -54,7 +53,7 @@ export function replyCompose(status, router) {
 
 export function cancelReplyCompose() {
   return {
-    type: COMPOSE_REPLY_CANCEL
+    type: COMPOSE_REPLY_CANCEL,
   };
 };
 
@@ -62,7 +61,7 @@ export function mentionCompose(account, router) {
   return (dispatch, getState) => {
     dispatch({
       type: COMPOSE_MENTION,
-      account: account
+      account: account,
     });
 
     if (!getState().getIn(['compose', 'mounted'])) {
@@ -73,22 +72,25 @@ export function mentionCompose(account, router) {
 
 export function submitCompose() {
   return function (dispatch, getState) {
-    const status = emojione.shortnameToUnicode(getState().getIn(['compose', 'text'], ''));
+    const status = getState().getIn(['compose', 'text'], '');
+
     if (!status || !status.length) {
       return;
     }
+
     dispatch(submitComposeRequest());
+
     api(getState).post('/api/v1/statuses', {
       status,
       in_reply_to_id: getState().getIn(['compose', 'in_reply_to'], null),
       media_ids: getState().getIn(['compose', 'media_attachments']).map(item => item.get('id')),
       sensitive: getState().getIn(['compose', 'sensitive']),
       spoiler_text: getState().getIn(['compose', 'spoiler_text'], ''),
-      visibility: getState().getIn(['compose', 'privacy'])
+      visibility: getState().getIn(['compose', 'privacy']),
     }, {
       headers: {
-        'Idempotency-Key': getState().getIn(['compose', 'idempotencyKey'])
-      }
+        'Idempotency-Key': getState().getIn(['compose', 'idempotencyKey']),
+      },
     }).then(function (response) {
       dispatch(submitComposeSuccess({ ...response.data }));
 
@@ -112,21 +114,21 @@ export function submitCompose() {
 
 export function submitComposeRequest() {
   return {
-    type: COMPOSE_SUBMIT_REQUEST
+    type: COMPOSE_SUBMIT_REQUEST,
   };
 };
 
 export function submitComposeSuccess(status) {
   return {
     type: COMPOSE_SUBMIT_SUCCESS,
-    status: status
+    status: status,
   };
 };
 
 export function submitComposeFail(error) {
   return {
     type: COMPOSE_SUBMIT_FAIL,
-    error: error
+    error: error,
   };
 };
 
@@ -144,7 +146,7 @@ export function uploadCompose(files) {
     api(getState).post('/api/v1/media', data, {
       onUploadProgress: function (e) {
         dispatch(uploadComposeProgress(e.loaded, e.total));
-      }
+      },
     }).then(function (response) {
       dispatch(uploadComposeSuccess(response.data));
     }).catch(function (error) {
@@ -156,7 +158,7 @@ export function uploadCompose(files) {
 export function uploadComposeRequest() {
   return {
     type: COMPOSE_UPLOAD_REQUEST,
-    skipLoading: true
+    skipLoading: true,
   };
 };
 
@@ -164,7 +166,7 @@ export function uploadComposeProgress(loaded, total) {
   return {
     type: COMPOSE_UPLOAD_PROGRESS,
     loaded: loaded,
-    total: total
+    total: total,
   };
 };
 
@@ -172,7 +174,7 @@ export function uploadComposeSuccess(media) {
   return {
     type: COMPOSE_UPLOAD_SUCCESS,
     media: media,
-    skipLoading: true
+    skipLoading: true,
   };
 };
 
@@ -180,20 +182,20 @@ export function uploadComposeFail(error) {
   return {
     type: COMPOSE_UPLOAD_FAIL,
     error: error,
-    skipLoading: true
+    skipLoading: true,
   };
 };
 
 export function undoUploadCompose(media_id) {
   return {
     type: COMPOSE_UPLOAD_UNDO,
-    media_id: media_id
+    media_id: media_id,
   };
 };
 
 export function clearComposeSuggestions() {
   return {
-    type: COMPOSE_SUGGESTIONS_CLEAR
+    type: COMPOSE_SUGGESTIONS_CLEAR,
   };
 };
 
@@ -203,8 +205,8 @@ export function fetchComposeSuggestions(token) {
       params: {
         q: token,
         resolve: false,
-        limit: 4
-      }
+        limit: 4,
+      },
     }).then(response => {
       dispatch(readyComposeSuggestions(token, response.data));
     });
@@ -215,7 +217,7 @@ export function readyComposeSuggestions(token, accounts) {
   return {
     type: COMPOSE_SUGGESTIONS_READY,
     token,
-    accounts
+    accounts,
   };
 };
 
@@ -227,20 +229,20 @@ export function selectComposeSuggestion(position, token, accountId) {
       type: COMPOSE_SUGGESTION_SELECT,
       position,
       token,
-      completion
+      completion,
     });
   };
 };
 
 export function mountCompose() {
   return {
-    type: COMPOSE_MOUNT
+    type: COMPOSE_MOUNT,
   };
 };
 
 export function unmountCompose() {
   return {
-    type: COMPOSE_UNMOUNT
+    type: COMPOSE_UNMOUNT,
   };
 };
 
@@ -252,21 +254,21 @@ export function changeComposeSensitivity() {
 
 export function changeComposeSpoilerness() {
   return {
-    type: COMPOSE_SPOILERNESS_CHANGE
+    type: COMPOSE_SPOILERNESS_CHANGE,
   };
 };
 
 export function changeComposeSpoilerText(text) {
   return {
     type: COMPOSE_SPOILER_TEXT_CHANGE,
-    text
+    text,
   };
 };
 
 export function changeComposeVisibility(value) {
   return {
     type: COMPOSE_VISIBILITY_CHANGE,
-    value
+    value,
   };
 };
 
@@ -274,6 +276,13 @@ export function insertEmojiCompose(position, emoji) {
   return {
     type: COMPOSE_EMOJI_INSERT,
     position,
-    emoji
+    emoji,
   };
 };
+
+export function changeComposing(value) {
+  return {
+    type: COMPOSE_COMPOSING_CHANGE,
+    value,
+  };
+}

@@ -7,22 +7,28 @@ import StatusContent from '../../../components/status_content';
 import MediaGallery from '../../../components/media_gallery';
 import VideoPlayer from '../../../components/video_player';
 import AttachmentList from '../../../components/attachment_list';
-import { Link } from 'react-router';
+import Link from 'react-router-dom/Link';
 import { FormattedDate, FormattedNumber } from 'react-intl';
 import CardContainer from '../containers/card_container';
 import ImmutablePureComponent from 'react-immutable-pure-component';
 
-class DetailedStatus extends ImmutablePureComponent {
+export default class DetailedStatus extends ImmutablePureComponent {
 
-  constructor (props, context) {
-    super(props, context);
-    this.handleAccountClick = this.handleAccountClick.bind(this);
-  }
+  static contextTypes = {
+    router: PropTypes.object,
+  };
 
-  handleAccountClick (e) {
+  static propTypes = {
+    status: ImmutablePropTypes.map.isRequired,
+    onOpenMedia: PropTypes.func.isRequired,
+    onOpenVideo: PropTypes.func.isRequired,
+    autoPlayGif: PropTypes.bool,
+  };
+
+  handleAccountClick = (e) => {
     if (e.button === 0) {
       e.preventDefault();
-      this.context.router.push(`/accounts/${this.props.status.getIn(['account', 'id'])}`);
+      this.context.router.history.push(`/accounts/${this.props.status.getIn(['account', 'id'])}`);
     }
 
     e.stopPropagation();
@@ -53,7 +59,7 @@ class DetailedStatus extends ImmutablePureComponent {
     return (
       <div className='detailed-status'>
         <a href={status.getIn(['account', 'url'])} onClick={this.handleAccountClick} className='detailed-status__display-name'>
-          <div className='detailed-status__display-avatar'><Avatar src={status.getIn(['account', 'avatar'])} staticSrc={status.getIn(['account', 'avatar_static'])} size={48} /></div>
+          <div className='detailed-status__display-avatar'><Avatar account={status.get('account')} size={48} /></div>
           <DisplayName account={status.get('account')} />
         </a>
 
@@ -81,16 +87,3 @@ class DetailedStatus extends ImmutablePureComponent {
   }
 
 }
-
-DetailedStatus.contextTypes = {
-  router: PropTypes.object
-};
-
-DetailedStatus.propTypes = {
-  status: ImmutablePropTypes.map.isRequired,
-  onOpenMedia: PropTypes.func.isRequired,
-  onOpenVideo: PropTypes.func.isRequired,
-  autoPlayGif: PropTypes.bool,
-};
-
-export default DetailedStatus;

@@ -15,11 +15,22 @@ export const CONTEXT_FETCH_REQUEST = 'CONTEXT_FETCH_REQUEST';
 export const CONTEXT_FETCH_SUCCESS = 'CONTEXT_FETCH_SUCCESS';
 export const CONTEXT_FETCH_FAIL    = 'CONTEXT_FETCH_FAIL';
 
+export const STATUS_MUTE_REQUEST = 'STATUS_MUTE_REQUEST';
+export const STATUS_MUTE_SUCCESS = 'STATUS_MUTE_SUCCESS';
+export const STATUS_MUTE_FAIL    = 'STATUS_MUTE_FAIL';
+
+export const STATUS_UNMUTE_REQUEST = 'STATUS_UNMUTE_REQUEST';
+export const STATUS_UNMUTE_SUCCESS = 'STATUS_UNMUTE_SUCCESS';
+export const STATUS_UNMUTE_FAIL    = 'STATUS_UNMUTE_FAIL';
+
+export const STATUS_SET_HEIGHT = 'STATUS_SET_HEIGHT';
+export const STATUSES_CLEAR_HEIGHT = 'STATUSES_CLEAR_HEIGHT';
+
 export function fetchStatusRequest(id, skipLoading) {
   return {
     type: STATUS_FETCH_REQUEST,
     id,
-    skipLoading
+    skipLoading,
   };
 };
 
@@ -48,7 +59,7 @@ export function fetchStatusSuccess(status, skipLoading) {
   return {
     type: STATUS_FETCH_SUCCESS,
     status,
-    skipLoading
+    skipLoading,
   };
 };
 
@@ -58,7 +69,7 @@ export function fetchStatusFail(id, error, skipLoading) {
     id,
     error,
     skipLoading,
-    skipAlert: true
+    skipAlert: true,
   };
 };
 
@@ -66,7 +77,7 @@ export function deleteStatus(id) {
   return (dispatch, getState) => {
     dispatch(deleteStatusRequest(id));
 
-    api(getState).delete(`/api/v1/statuses/${id}`).then(response => {
+    api(getState).delete(`/api/v1/statuses/${id}`).then(() => {
       dispatch(deleteStatusSuccess(id));
       dispatch(deleteFromTimelines(id));
     }).catch(error => {
@@ -78,14 +89,14 @@ export function deleteStatus(id) {
 export function deleteStatusRequest(id) {
   return {
     type: STATUS_DELETE_REQUEST,
-    id: id
+    id: id,
   };
 };
 
 export function deleteStatusSuccess(id) {
   return {
     type: STATUS_DELETE_SUCCESS,
-    id: id
+    id: id,
   };
 };
 
@@ -93,7 +104,7 @@ export function deleteStatusFail(id, error) {
   return {
     type: STATUS_DELETE_FAIL,
     id: id,
-    error: error
+    error: error,
   };
 };
 
@@ -105,7 +116,7 @@ export function fetchContext(id) {
       dispatch(fetchContextSuccess(id, response.data.ancestors, response.data.descendants));
 
     }).catch(error => {
-      if (error.response.status === 404) {
+      if (error.response && error.response.status === 404) {
         dispatch(deleteFromTimelines(id));
       }
 
@@ -117,7 +128,7 @@ export function fetchContext(id) {
 export function fetchContextRequest(id) {
   return {
     type: CONTEXT_FETCH_REQUEST,
-    id
+    id,
   };
 };
 
@@ -127,7 +138,7 @@ export function fetchContextSuccess(id, ancestors, descendants) {
     id,
     ancestors,
     descendants,
-    statuses: ancestors.concat(descendants)
+    statuses: ancestors.concat(descendants),
   };
 };
 
@@ -136,6 +147,88 @@ export function fetchContextFail(id, error) {
     type: CONTEXT_FETCH_FAIL,
     id,
     error,
-    skipAlert: true
+    skipAlert: true,
+  };
+};
+
+export function muteStatus(id) {
+  return (dispatch, getState) => {
+    dispatch(muteStatusRequest(id));
+
+    api(getState).post(`/api/v1/statuses/${id}/mute`).then(() => {
+      dispatch(muteStatusSuccess(id));
+    }).catch(error => {
+      dispatch(muteStatusFail(id, error));
+    });
+  };
+};
+
+export function muteStatusRequest(id) {
+  return {
+    type: STATUS_MUTE_REQUEST,
+    id,
+  };
+};
+
+export function muteStatusSuccess(id) {
+  return {
+    type: STATUS_MUTE_SUCCESS,
+    id,
+  };
+};
+
+export function muteStatusFail(id, error) {
+  return {
+    type: STATUS_MUTE_FAIL,
+    id,
+    error,
+  };
+};
+
+export function unmuteStatus(id) {
+  return (dispatch, getState) => {
+    dispatch(unmuteStatusRequest(id));
+
+    api(getState).post(`/api/v1/statuses/${id}/unmute`).then(() => {
+      dispatch(unmuteStatusSuccess(id));
+    }).catch(error => {
+      dispatch(unmuteStatusFail(id, error));
+    });
+  };
+};
+
+export function unmuteStatusRequest(id) {
+  return {
+    type: STATUS_UNMUTE_REQUEST,
+    id,
+  };
+};
+
+export function unmuteStatusSuccess(id) {
+  return {
+    type: STATUS_UNMUTE_SUCCESS,
+    id,
+  };
+};
+
+export function unmuteStatusFail(id, error) {
+  return {
+    type: STATUS_UNMUTE_FAIL,
+    id,
+    error,
+  };
+};
+
+export function setStatusHeight (id, height) {
+  return {
+    type: STATUS_SET_HEIGHT,
+    id,
+    height,
+  };
+};
+
+export function clearStatusesHeight () {
+  return {
+    type: STATUSES_CLEAR_HEIGHT,
   };
 };

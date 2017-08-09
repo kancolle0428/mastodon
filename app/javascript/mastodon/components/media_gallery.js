@@ -6,19 +6,49 @@ import { defineMessages, injectIntl, FormattedMessage } from 'react-intl';
 import { isIOS } from '../is_mobile';
 
 const messages = defineMessages({
-  toggle_visible: { id: 'media_gallery.toggle_visible', defaultMessage: 'Toggle visibility' }
+  toggle_visible: { id: 'media_gallery.toggle_visible', defaultMessage: 'Toggle visibility' },
 });
 
 class Item extends React.PureComponent {
-  constructor (props, context) {
-    super(props, context);
-    this.handleClick = this.handleClick.bind(this);
+
+  static contextTypes = {
+    router: PropTypes.object,
+  };
+
+  static propTypes = {
+    attachment: ImmutablePropTypes.map.isRequired,
+    index: PropTypes.number.isRequired,
+    size: PropTypes.number.isRequired,
+    onClick: PropTypes.func.isRequired,
+    autoPlayGif: PropTypes.bool,
+  };
+
+  static defaultProps = {
+    autoPlayGif: false,
+  };
+
+  handleMouseEnter = (e) => {
+    if (this.hoverToPlay()) {
+      e.target.play();
+    }
   }
 
-  handleClick (e) {
+  handleMouseLeave = (e) => {
+    if (this.hoverToPlay()) {
+      e.target.pause();
+      e.target.currentTime = 0;
+    }
+  }
+
+  hoverToPlay () {
+    const { attachment, autoPlayGif } = this.props;
+    return !autoPlayGif && attachment.get('type') === 'gifv';
+  }
+
+  handleClick = (e) => {
     const { index, onClick } = this.props;
 
-    if (e.button === 0) {
+    if (this.context.router && e.button === 0) {
       e.preventDefault();
       onClick(index);
     }
@@ -81,14 +111,26 @@ class Item extends React.PureComponent {
     let thumbnail = '';
 
     if (attachment.get('type') === 'image') {
+      const previewUrl = attachment.get('preview_url');
+      const previewWidth = attachment.getIn(['meta', 'small', 'width']);
+
+      const originalUrl = attachment.get('url');
+      const originalWidth = attachment.getIn(['meta', 'original', 'width']);
+
+      const hasSize = typeof originalWidth === 'number' && typeof previewWidth === 'number';
+
+      const srcSet = hasSize && `${originalUrl} ${originalWidth}w, ${previewUrl} ${previewWidth}w`;
+      const sizes = hasSize && `(min-width: 1025px) ${320 * (width / 100)}px, ${width}vw`;
+
       thumbnail = (
         <a
           className='media-gallery__item-thumbnail'
-          href={attachment.get('remote_url') || attachment.get('url')}
+          href={attachment.get('remote_url') || originalUrl}
           onClick={this.handleClick}
           target='_blank'
-          style={{ backgroundImage: `url(${attachment.get('preview_url')})` }}
-        />
+        >
+          <img src={previewUrl} srcSet={srcSet} sizes={sizes} alt='' />
+        </a>
       );
     } else if (attachment.get('type') === 'gifv') {
       const autoPlay = !isIOS() && this.props.autoPlayGif;
@@ -100,9 +142,11 @@ class Item extends React.PureComponent {
             role='application'
             src={attachment.get('url')}
             onClick={this.handleClick}
+            onMouseEnter={this.handleMouseEnter}
+            onMouseLeave={this.handleMouseLeave}
             autoPlay={autoPlay}
-            loop={true}
-            muted={true}
+            loop
+            muted
           />
 
           <span className='media-gallery__gifv__label'>GIF</span>
@@ -119,30 +163,37 @@ class Item extends React.PureComponent {
 
 }
 
-Item.propTypes = {
-  attachment: ImmutablePropTypes.map.isRequired,
-  index: PropTypes.number.isRequired,
-  size: PropTypes.number.isRequired,
-  onClick: PropTypes.func.isRequired,
-  autoPlayGif: PropTypes.bool.isRequired
-};
+@injectIntl
+export default class MediaGallery extends React.PureComponent {
 
-class MediaGallery extends React.PureComponent {
+  static propTypes = {
+    sensitive: PropTypes.bool,
+    media: ImmutablePropTypes.list.isRequired,
+    height: PropTypes.number.isRequired,
+    onOpenMedia: PropTypes.func.isRequired,
+    intl: PropTypes.object.isRequired,
+    autoPlayGif: PropTypes.bool,
+  };
 
-  constructor (props, context) {
-    super(props, context);
-    this.state = {
-      visible: !props.sensitive
-    };
-    this.handleOpen = this.handleOpen.bind(this);
-    this.handleClick = this.handleClick.bind(this);
+  static defaultProps = {
+    autoPlayGif: false,
+  };
+
+  state = {
+    visible: !this.props.sensitive,
+  };
+
+  componentWillReceiveProps (nextProps) {
+    if (nextProps.sensitive !== this.props.sensitive) {
+      this.setState({ visible: !nextProps.sensitive });
+    }
   }
 
-  handleOpen (e) {
+  handleOpen = () => {
     this.setState({ visible: !this.state.visible });
   }
 
-  handleClick (index) {
+  handleClick = (index) => {
     this.props.onOpenMedia(this.props.media, index);
   }
 
@@ -161,10 +212,10 @@ class MediaGallery extends React.PureComponent {
       }
 
       children = (
-        <div role='button' tabIndex='0' className='media-spoiler' onClick={this.handleOpen}>
+        <button className='media-spoiler' onClick={this.handleOpen}>
           <span className='media-spoiler__warning'>{warning}</span>
           <span className='media-spoiler__trigger'><FormattedMessage id='status.sensitive_toggle' defaultMessage='Click to view' /></span>
-        </div>
+        </button>
       );
     } else {
       const size = media.take(4).size;
@@ -173,7 +224,7 @@ class MediaGallery extends React.PureComponent {
 
     return (
       <div className='media-gallery' style={{ height: `${this.props.height}px` }}>
-        <div className='spoiler-button' style={{ display: !this.state.visible ? 'none' : 'block' }}>
+        <div className={`spoiler-button ${this.state.visible ? 'spoiler-button--visible' : ''}`}>
           <IconButton title={intl.formatMessage(messages.toggle_visible)} icon={this.state.visible ? 'eye' : 'eye-slash'} overlay onClick={this.handleOpen} />
         </div>
 
@@ -183,14 +234,3 @@ class MediaGallery extends React.PureComponent {
   }
 
 }
-
-MediaGallery.propTypes = {
-  sensitive: PropTypes.bool,
-  media: ImmutablePropTypes.list.isRequired,
-  height: PropTypes.number.isRequired,
-  onOpenMedia: PropTypes.func.isRequired,
-  intl: PropTypes.object.isRequired,
-  autoPlayGif: PropTypes.bool.isRequired
-};
-
-export default injectIntl(MediaGallery);

@@ -4,7 +4,8 @@
 .compact-header
   %h1<
     = link_to site_title, root_path
-    %small= "##{@tag.name}"
+    %br
+    %small ##{@tag.name}
 
 - if @statuses.empty?
   .accounts-grid

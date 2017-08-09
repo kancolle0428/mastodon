@@ -1,46 +1,81 @@
 import React from 'react';
-import ColumnsArea from './components/columns_area';
+import classNames from 'classnames';
+import Redirect from 'react-router-dom/Redirect';
 import NotificationsContainer from './containers/notifications_container';
 import PropTypes from 'prop-types';
 import LoadingBarContainer from './containers/loading_bar_container';
-import HomeTimeline from '../home_timeline';
-import Compose from '../compose';
 import TabsBar from './components/tabs_bar';
 import ModalContainer from './containers/modal_container';
-import Notifications from '../notifications';
 import { connect } from 'react-redux';
 import { isMobile } from '../../is_mobile';
 import { debounce } from 'lodash';
 import { uploadCompose } from '../../actions/compose';
-import { refreshTimeline } from '../../actions/timelines';
+import { refreshHomeTimeline } from '../../actions/timelines';
 import { refreshNotifications } from '../../actions/notifications';
+import { clearStatusesHeight } from '../../actions/statuses';
+import { WrappedSwitch, WrappedRoute } from './util/react_router_helpers';
 import UploadArea from './components/upload_area';
+import ColumnsAreaContainer from './containers/columns_area_container';
+import {
+  Compose,
+  Status,
+  GettingStarted,
+  PublicTimeline,
+  CommunityTimeline,
+  AccountTimeline,
+  AccountGallery,
+  HomeTimeline,
+  Followers,
+  Following,
+  Reblogs,
+  Favourites,
+  HashtagTimeline,
+  Notifications,
+  FollowRequests,
+  GenericNotFound,
+  FavouritedStatuses,
+  Blocks,
+  Mutes,
+} from './util/async-components';
 
-const noOp = () => false;
+// Dummy import, to make sure that <Status /> ends up in the application bundle.
+// Without this it ends up in ~8 very commonly used bundles.
+import '../../components/status';
 
-class UI extends React.PureComponent {
+const mapStateToProps = state => ({
+  systemFontUi: state.getIn(['meta', 'system_font_ui']),
+  isComposing: state.getIn(['compose', 'is_composing']),
+});
 
-  constructor (props, context) {
-    super(props, context);
-    this.state = {
-      width: window.innerWidth,
-      draggingOver: false
-    };
-    this.handleResize = debounce(this.handleResize.bind(this), 500);
-    this.handleDragEnter = this.handleDragEnter.bind(this);
-    this.handleDragOver = this.handleDragOver.bind(this);
-    this.handleDrop = this.handleDrop.bind(this);
-    this.handleDragLeave = this.handleDragLeave.bind(this);
-    this.handleDragEnd = this.handleDragLeave.bind(this)
-    this.closeUploadModal = this.closeUploadModal.bind(this)
-    this.setRef = this.setRef.bind(this);
+@connect(mapStateToProps)
+export default class UI extends React.PureComponent {
+
+  static contextTypes = {
+    router: PropTypes.object.isRequired,
   }
 
-  handleResize () {
+  static propTypes = {
+    dispatch: PropTypes.func.isRequired,
+    children: PropTypes.node,
+    systemFontUi: PropTypes.bool,
+    isComposing: PropTypes.bool,
+  };
+
+  state = {
+    width: window.innerWidth,
+    draggingOver: false,
+  };
+
+  handleResize = debounce(() => {
+    // The cached heights are no longer accurate, invalidate
+    this.props.dispatch(clearStatusesHeight());
+
     this.setState({ width: window.innerWidth });
-  }
+  }, 500, {
+    trailing: true,
+  });
 
-  handleDragEnter (e) {
+  handleDragEnter = (e) => {
     e.preventDefault();
 
     if (!this.dragTargets) {
@@ -56,7 +91,7 @@ class UI extends React.PureComponent {
     }
   }
 
-  handleDragOver (e) {
+  handleDragOver = (e) => {
     e.preventDefault();
     e.stopPropagation();
 
@@ -69,7 +104,7 @@ class UI extends React.PureComponent {
     return false;
   }
 
-  handleDrop (e) {
+  handleDrop = (e) => {
     e.preventDefault();
 
     this.setState({ draggingOver: false });
@@ -79,7 +114,7 @@ class UI extends React.PureComponent {
     }
   }
 
-  handleDragLeave (e) {
+  handleDragLeave = (e) => {
     e.preventDefault();
     e.stopPropagation();
 
@@ -92,8 +127,16 @@ class UI extends React.PureComponent {
     this.setState({ draggingOver: false });
   }
 
-  closeUploadModal() {
+  closeUploadModal = () => {
     this.setState({ draggingOver: false });
+  }
+
+  handleServiceWorkerPostMessage = ({ data }) => {
+    if (data.type === 'navigate') {
+      this.context.router.history.push(data.path);
+    } else {
+      console.warn('Unknown message type:', data.type); // eslint-disable-line no-console
+    }
   }
 
   componentWillMount () {
@@ -104,8 +147,25 @@ class UI extends React.PureComponent {
     document.addEventListener('dragleave', this.handleDragLeave, false);
     document.addEventListener('dragend', this.handleDragEnd, false);
 
-    this.props.dispatch(refreshTimeline('home'));
+    if ('serviceWorker' in  navigator) {
+      navigator.serviceWorker.addEventListener('message', this.handleServiceWorkerPostMessage);
+    }
+
+    this.props.dispatch(refreshHomeTimeline());
     this.props.dispatch(refreshNotifications());
+  }
+
+  shouldComponentUpdate (nextProps) {
+    if (nextProps.isComposing !== this.props.isComposing) {
+      // Avoid expensive update just to toggle a class
+      this.node.classList.toggle('is-composing', nextProps.isComposing);
+
+      return false;
+    }
+
+    // Why isn't this working?!?
+    // return super.shouldComponentUpdate(nextProps, nextState);
+    return true;
   }
 
   componentWillUnmount () {
@@ -117,7 +177,7 @@ class UI extends React.PureComponent {
     document.removeEventListener('dragend', this.handleDragEnd);
   }
 
-  setRef (c) {
+  setRef = (c) => {
     this.node = c;
   }
 
@@ -125,33 +185,44 @@ class UI extends React.PureComponent {
     const { width, draggingOver } = this.state;
     const { children } = this.props;
 
-    let mountedColumns;
-
-    if (isMobile(width)) {
-      mountedColumns = (
-        <ColumnsArea>
-          {children}
-        </ColumnsArea>
-      );
-    } else {
-      mountedColumns = (
-        <ColumnsArea>
-          <Compose withHeader={true} />
-          <HomeTimeline shouldUpdateScroll={noOp} />
-          <Notifications shouldUpdateScroll={noOp} />
-          <div style={{display: 'flex', flex: '1 1 auto', position: 'relative'}}>{children}</div>
-        </ColumnsArea>
-      );
-    }
+    const className = classNames('ui', {
+      'system-font': this.props.systemFontUi,
+    });
 
     return (
-      <div className='ui' ref={this.setRef}>
+      <div className={className} ref={this.setRef}>
         <TabsBar />
+        <ColumnsAreaContainer singleColumn={isMobile(width)}>
+          <WrappedSwitch>
+            <Redirect from='/' to='/getting-started' exact />
+            <WrappedRoute path='/getting-started' component={GettingStarted} content={children} />
+            <WrappedRoute path='/timelines/home' component={HomeTimeline} content={children} />
+            <WrappedRoute path='/timelines/public' exact component={PublicTimeline} content={children} />
+            <WrappedRoute path='/timelines/public/local' component={CommunityTimeline} content={children} />
+            <WrappedRoute path='/timelines/tag/:id' component={HashtagTimeline} content={children} />
 
-        {mountedColumns}
+            <WrappedRoute path='/notifications' component={Notifications} content={children} />
+            <WrappedRoute path='/favourites' component={FavouritedStatuses} content={children} />
 
+            <WrappedRoute path='/statuses/new' component={Compose} content={children} />
+            <WrappedRoute path='/statuses/:statusId' exact component={Status} content={children} />
+            <WrappedRoute path='/statuses/:statusId/reblogs' component={Reblogs} content={children} />
+            <WrappedRoute path='/statuses/:statusId/favourites' component={Favourites} content={children} />
+
+            <WrappedRoute path='/accounts/:accountId' exact component={AccountTimeline} content={children} />
+            <WrappedRoute path='/accounts/:accountId/followers' component={Followers} content={children} />
+            <WrappedRoute path='/accounts/:accountId/following' component={Following} content={children} />
+            <WrappedRoute path='/accounts/:accountId/media' component={AccountGallery} content={children} />
+
+            <WrappedRoute path='/follow_requests' component={FollowRequests} content={children} />
+            <WrappedRoute path='/blocks' component={Blocks} content={children} />
+            <WrappedRoute path='/mutes' component={Mutes} content={children} />
+
+            <WrappedRoute component={GenericNotFound} content={children} />
+          </WrappedSwitch>
+        </ColumnsAreaContainer>
         <NotificationsContainer />
-        <LoadingBarContainer className="loading-bar" />
+        <LoadingBarContainer className='loading-bar' />
         <ModalContainer />
         <UploadArea active={draggingOver} onClose={this.closeUploadModal} />
       </div>
@@ -159,10 +230,3 @@ class UI extends React.PureComponent {
   }
 
 }
-
-UI.propTypes = {
-  dispatch: PropTypes.func.isRequired,
-  children: PropTypes.node
-};
-
-export default connect()(UI);

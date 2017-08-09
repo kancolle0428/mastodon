@@ -1,15 +1,18 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-class ExtendedVideoPlayer extends React.PureComponent {
+export default class ExtendedVideoPlayer extends React.PureComponent {
 
-  constructor (props, context) {
-    super(props, context);
-    this.handleLoadedData = this.handleLoadedData.bind(this);
-    this.setRef = this.setRef.bind(this);
-  }
+  static propTypes = {
+    src: PropTypes.string.isRequired,
+    width: PropTypes.number,
+    height: PropTypes.number,
+    time: PropTypes.number,
+    controls: PropTypes.bool.isRequired,
+    muted: PropTypes.bool.isRequired,
+  };
 
-  handleLoadedData () {
+  handleLoadedData = () => {
     if (this.props.time) {
       this.video.currentTime = this.props.time;
     }
@@ -23,7 +26,7 @@ class ExtendedVideoPlayer extends React.PureComponent {
     this.video.removeEventListener('loadeddata', this.handleLoadedData);
   }
 
-  setRef (c) {
+  setRef = (c) => {
     this.video = c;
   }
 
@@ -43,12 +46,3 @@ class ExtendedVideoPlayer extends React.PureComponent {
   }
 
 }
-
-ExtendedVideoPlayer.propTypes = {
-  src: PropTypes.string.isRequired,
-  time: PropTypes.number,
-  controls: PropTypes.bool.isRequired,
-  muted: PropTypes.bool.isRequired
-};
-
-export default ExtendedVideoPlayer;

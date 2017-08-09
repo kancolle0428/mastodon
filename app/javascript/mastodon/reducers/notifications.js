@@ -7,25 +7,26 @@ import {
   NOTIFICATIONS_REFRESH_FAIL,
   NOTIFICATIONS_EXPAND_FAIL,
   NOTIFICATIONS_CLEAR,
-  NOTIFICATIONS_SCROLL_TOP
+  NOTIFICATIONS_SCROLL_TOP,
 } from '../actions/notifications';
 import { ACCOUNT_BLOCK_SUCCESS } from '../actions/accounts';
-import Immutable from 'immutable';
+import { TIMELINE_DELETE } from '../actions/timelines';
+import { Map as ImmutableMap, List as ImmutableList } from 'immutable';
 
-const initialState = Immutable.Map({
-  items: Immutable.List(),
+const initialState = ImmutableMap({
+  items: ImmutableList(),
   next: null,
   top: true,
   unread: 0,
   loaded: false,
-  isLoading: true
+  isLoading: true,
 });
 
-const notificationToMap = notification => Immutable.Map({
+const notificationToMap = notification => ImmutableMap({
   id: notification.id,
   type: notification.type,
   account: notification.account.id,
-  status: notification.status ? notification.status.id : null
+  status: notification.status ? notification.status.id : null,
 });
 
 const normalizeNotification = (state, notification) => {
@@ -45,7 +46,7 @@ const normalizeNotification = (state, notification) => {
 };
 
 const normalizeNotifications = (state, notifications, next) => {
-  let items    = Immutable.List();
+  let items    = ImmutableList();
   const loaded = state.get('loaded');
 
   notifications.forEach((n, i) => {
@@ -63,7 +64,7 @@ const normalizeNotifications = (state, notifications, next) => {
 };
 
 const appendNormalizedNotifications = (state, notifications, next) => {
-  let items = Immutable.List();
+  let items = ImmutableList();
 
   notifications.forEach((n, i) => {
     items = items.set(i, notificationToMap(n));
@@ -87,6 +88,10 @@ const updateTop = (state, top) => {
   return state.set('top', top);
 };
 
+const deleteByStatus = (state, statusId) => {
+  return state.update('items', list => list.filterNot(item => item.get('status') === statusId));
+};
+
 export default function notifications(state = initialState, action) {
   switch(action.type) {
   case NOTIFICATIONS_REFRESH_REQUEST:
@@ -105,7 +110,9 @@ export default function notifications(state = initialState, action) {
   case ACCOUNT_BLOCK_SUCCESS:
     return filterNotifications(state, action.relationship);
   case NOTIFICATIONS_CLEAR:
-    return state.set('items', Immutable.List()).set('next', null);
+    return state.set('items', ImmutableList()).set('next', null);
+  case TIMELINE_DELETE:
+    return deleteByStatus(state, action.id);
   default:
     return state;
   }

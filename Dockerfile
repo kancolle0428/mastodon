@@ -3,8 +3,12 @@ FROM ruby:2.4.1
 LABEL maintainer="https://github.com/kancolle0428/mastodon" \
       description="A GNU Social-compatible microblogging server"
 
-ENV RAILS_ENV=production \
-    NODE_ENV=production
+ENV UID=991 GID=991 \
+    RAILS_SERVE_STATIC_FILES=true \
+    RAILS_ENV=production NODE_ENV=production
+
+ARG LIBICONV_VERSION=1.15
+ARG LIBICONV_DOWNLOAD_SHA256=ccf536620a45458d26ba83887a983b96827001e92a13847b45e4925cc8913178
 
 EXPOSE 3000 4000
 
@@ -51,4 +55,10 @@ RUN yarn --ignore-optional
 
 COPY . /mastodon
 
+COPY docker_entrypoint.sh /usr/local/bin/run
+
+RUN chmod +x /usr/local/bin/run
+
 VOLUME /mastodon/public/system /mastodon/public/assets /mastodon/public/packs
+
+ENTRYPOINT ["/usr/local/bin/run"]
