@@ -135,6 +135,11 @@ class User < ApplicationRecord
   private
 
   def sanitize_languages
-    filtered_languages.reject!(&:blank?)
+    begin
+      languages = JSON.parse(filtered_languages)
+    rescue => exception
+      languages = []
+    end
+    languages.reject!(&:blank?)
   end
 end

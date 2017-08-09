@@ -1,17 +1,11 @@
 ---
 ja:
   about:
-<<<<<<< HEAD
     about_mastodon: 「艦ます」は艦これを愛する<em>提督</em>のためのSNSです。プレイ実況や攻略情報の共有、ほか艦これの雑談にご利用ください。
     about_this: このインスタンスについて
     apps: アプリ
     business_email: 'ビジネスメールアドレス:'
     closed_registrations: 現在このインスタンスでの新規登録は受け付けていません。
-=======
-    about_mastodon_html: Mastodon は、オープンなウェブプロトコルを採用した、自由でオープンソースなソーシャルネットワークです。電子メールのような分散型の仕組みを採っています。
-    about_this: 詳細情報
-    closed_registrations: 現在このインスタンスでの新規登録は受け付けていません。しかし、他のインスタンスにアカウントを作成しても全く同じネットワークに参加することができます。
->>>>>>> 4e1bf082ce83ca941f20993fcfb8b6f9597624c6
     contact: 連絡先
     contact_missing: 未設定
     contact_unavailable: N/A
@@ -22,7 +16,6 @@ ja:
       <h3>ルールを書くのに適した場所</h3>
       <p>詳細説明が設定されていません。</p>
     features:
-<<<<<<< HEAD
       api: アプリやその他サービスにAPIを公開
       blocks: 豊富なブロックやミュート機能
       characters: 1つの投稿は500文字まで利用可能
@@ -31,10 +24,6 @@ ja:
       gifv: GIFVや短い動画にも対応
       privacy: 投稿ごとに公開範囲を細かく設定可能
       public: 公開タイムライン
-    features_headline: Mastodon の特徴
-    get_started: 参加する
-    links: リンク
-=======
       humane_approach_body: 他の SNS の失敗から学び、Mastodon はソーシャルメディアが誤った使い方をされることの無いように倫理的な設計を目指しています。
       humane_approach_title: より思いやりのある設計
       not_a_product_body: Mastodon は営利的な SNS ではありません。広告や、データの収集・解析は無く、またユーザーの囲い込みもありません。
@@ -43,23 +32,21 @@ ja:
       real_conversation_title: 本当のコミュニケーションのために
       within_reach_body: デベロッパーフレンドリーな API により実現された、iOS や Android、その他様々なプラットフォームのためのアプリでどこでも友人とやりとりできます。
       within_reach_title: いつでも身近に
+    features_headline: Mastodon の特徴
+    get_started: 参加する
+    links: リンク
     find_another_instance: 他のインスタンスを探す
     generic_description: "%{domain} は、Mastodon インスタンスの一つです。"
     hosted_on: Mastodon hosted on %{domain}
     learn_more: もっと詳しく
->>>>>>> 4e1bf082ce83ca941f20993fcfb8b6f9597624c6
     other_instances: 他のインスタンス
     source_code: ソースコード
     status_count_after: トゥート
     status_count_before: トゥート数
     user_count_after: 人
-<<<<<<< HEAD
     user_count_before: 提督の数
     version: バージョン
-=======
-    user_count_before: ユーザー数
     what_is_mastodon: Mastodon とは？
->>>>>>> 4e1bf082ce83ca941f20993fcfb8b6f9597624c6
   accounts:
     follow: フォロー
     followers: フォロワー
