@@ -5,11 +5,11 @@
 #
 #  id                       :integer          not null, primary key
 #  user_id                  :integer          not null
-#  session_id               :string           not null
+#  session_id               :string(255)      not null
 #  created_at               :datetime         not null
 #  updated_at               :datetime         not null
-#  user_agent               :string           default(""), not null
-#  ip                       :inet
+#  user_agent               :string(255)      default(""), not null
+#  ip                       :string(255)
 #  access_token_id          :integer
 #  web_push_subscription_id :integer
 #

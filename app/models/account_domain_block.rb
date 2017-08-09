@@ -5,7 +5,7 @@
 #
 #  id         :integer          not null, primary key
 #  account_id :integer
-#  domain     :string
+#  domain     :string(255)
 #  created_at :datetime         not null
 #  updated_at :datetime         not null
 #

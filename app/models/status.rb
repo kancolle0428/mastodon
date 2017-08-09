@@ -12,15 +12,16 @@
 #  in_reply_to_id         :integer
 #  reblog_of_id           :integer
 #  url                    :string(255)
-#  sensitive              :boolean          default(FALSE)
+#  sensitive              :boolean          default(FALSE), not null
 #  visibility             :integer          default("public"), not null
 #  in_reply_to_account_id :integer
 #  application_id         :integer
 #  spoiler_text           :text(65535)
-#  reply                  :boolean          default(FALSE)
+#  reply                  :boolean          default(FALSE), not null
 #  favourites_count       :integer          default(0), not null
 #  reblogs_count          :integer          default(0), not null
-#  language               :string(255)      default("en"), not null
+#  language               :string(255)
+#  conversation_id        :integer
 #
 
 class Status < ApplicationRecord

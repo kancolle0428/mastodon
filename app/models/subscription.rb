@@ -12,6 +12,7 @@
 #  created_at                  :datetime         not null
 #  updated_at                  :datetime         not null
 #  last_successful_delivery_at :datetime
+#  domain                      :string(255)
 #
 
 class Subscription < ApplicationRecord

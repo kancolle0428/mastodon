@@ -1,6 +1,6 @@
 class CreateConversations < ActiveRecord::Migration[5.0]
   def change
-    create_table :conversations, id: :bigserial do |t|
+    create_table :conversations do |t|
       t.string :uri, null: true, default: nil
       t.timestamps
     end

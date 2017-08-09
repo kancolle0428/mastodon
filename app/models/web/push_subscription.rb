@@ -4,10 +4,10 @@
 # Table name: web_push_subscriptions
 #
 #  id         :integer          not null, primary key
-#  endpoint   :string           not null
-#  key_p256dh :string           not null
-#  key_auth   :string           not null
-#  data       :json
+#  endpoint   :string(255)      not null
+#  key_p256dh :string(255)      not null
+#  key_auth   :string(255)      not null
+#  data       :text(4294967295)
 #  created_at :datetime         not null
 #  updated_at :datetime         not null
 #

@@ -17,7 +17,7 @@
 #  last_sign_in_at           :datetime
 #  current_sign_in_ip        :string(255)
 #  last_sign_in_ip           :string(255)
-#  admin                     :boolean          default(FALSE)
+#  admin                     :boolean          default(FALSE), not null
 #  confirmation_token        :string(255)
 #  confirmed_at              :datetime
 #  confirmation_sent_at      :datetime
@@ -27,10 +27,10 @@
 #  encrypted_otp_secret_iv   :string(255)
 #  encrypted_otp_secret_salt :string(255)
 #  consumed_timestep         :integer
-#  otp_required_for_login    :boolean
+#  otp_required_for_login    :boolean          default(FALSE), not null
 #  last_emailed_at           :datetime
 #  otp_backup_codes          :string(255)
-#  allowed_languages         :string(255)
+#  filtered_languages        :string(255)      default(""), not null
 #
 
 class User < ApplicationRecord

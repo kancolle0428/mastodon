@@ -36,6 +36,11 @@
 #  followers_count         :integer          default(0), not null
 #  following_count         :integer          default(0), not null
 #  last_webfingered_at     :datetime
+#  inbox_url               :string(255)      default(""), not null
+#  outbox_url              :string(255)      default(""), not null
+#  shared_inbox_url        :string(255)      default(""), not null
+#  followers_url           :string(255)      default(""), not null
+#  protocol                :integer          default("ostatus"), not null
 #
 
 class Account < ApplicationRecord
